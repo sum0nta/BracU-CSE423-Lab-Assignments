@@ -142,6 +142,10 @@ def drawLanes():
 # Draw Player Car
 def drawPlayerCar():
     glColor3f(1.0, 1.0, 1.0)  # Blue color
+    #------Nodi added part-------#
+    if immunity_active:  # Change color when immunity is active
+        glColor3f(0.0, 1.0, 1.0)  # Cyan for immunity
+    #------Nodi part end ------#
     midpointLineEightWay(player_x - car_width // 2, player_y, player_x + car_width // 2, player_y)
 
     midpointLineEightWay(player_x + car_width // 2, player_y, player_x + car_width // 2, player_y + car_height)
@@ -777,6 +781,53 @@ def check_collisions():
 
 #-------------------RafiEnd-------------------#
 
+# ------------------- Visual Effects and Immunity Feature ------------------- #
+
+def drawImmunityEffect():
+    """
+    Draws a flashing visual effect around the player car when immunity is active.
+    """
+    if immunity_active:
+        elapsed = time.time() - immunity_start_time
+        if int(elapsed * 5) % 2 == 0:  # Flashing effect based on time
+            glColor3f(1.0, 1.0, 0.0)  # Yellow for immunity
+            glLineWidth(3)
+            midpointLineEightWay(player_x - car_width // 2 - 10, player_y - 10, 
+                                 player_x + car_width // 2 + 10, player_y - 10)
+            midpointLineEightWay(player_x + car_width // 2 + 10, player_y - 10, 
+                                 player_x + car_width // 2 + 10, player_y + car_height + 10)
+            midpointLineEightWay(player_x + car_width // 2 + 10, player_y + car_height + 10, 
+                                 player_x - car_width // 2 - 10, player_y + car_height + 10)
+            midpointLineEightWay(player_x - car_width // 2 - 10, player_y - 10, 
+                                 player_x - car_width // 2 - 10, player_y + car_height + 10)
+
+def activateImmunity():
+    """
+    Activates immunity for the player, enabling visual and gameplay effects.
+    """
+    global immunity_active, immunity_start_time
+    immunity_active = True
+    immunity_start_time = time.time()
+
+def checkImmunityTimer():
+    """
+    Deactivates immunity when the timer runs out.
+    """
+    global immunity_active
+    if immunity_active and time.time() - immunity_start_time > 15:  # Immunity lasts 15 seconds
+        immunity_active = False
+
+def drawCoinEffect(x, y):
+    """
+    Draws a sparkling effect at the specified position when a coin is collected.
+    """
+    glColor3f(1.0, 1.0, 0.0)  # Yellow for coins
+    for _ in range(10):
+        glBegin(GL_POINTS)
+        glVertex2f(x + random.randint(-10, 10), y + random.randint(-10, 10))
+        glEnd()
+
+# ------------------- End of Visual Effects and Immunity Feature ------------------- #
 
 
 # Display Function
@@ -791,6 +842,7 @@ def display():
             glClear(GL_COLOR_BUFFER_BIT)
             drawLanes()
             drawPlayerCar()
+            drawImmunityEffect() # Draw immunity effect
             drawOncomingCars()
             drawCoins()
             generateImmunityCoins(0)    
