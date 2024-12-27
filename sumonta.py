@@ -307,7 +307,7 @@ def spawnObjects(value):
                 print(f"Regular coin spawned at lane {lane}")
                           
         
-        glutTimerFunc(900, spawnObjects, 0)
+        glutTimerFunc(700, spawnObjects, 0)
 
 # Keyboard Controls
 def keyboardListener(key, x, y):
@@ -779,9 +779,9 @@ def drawLeaderboard():
     glColor3f(0.0, 0.7, 0.6)
     mainmenu_box2.draw()
     draw_word("MAINMENU", 195, 240)
-    draw_number(str(leaderboard[0]),230, 510)
-    draw_number(str(leaderboard[1]),230, 420)
-    draw_number(str(leaderboard[2]),230, 330)
+    draw_number(str(leaderboard[0]) if len(leaderboard) > 0 else 0,230, 510)
+    draw_number(str(leaderboard[1]) if len(leaderboard) > 1 else 0,230, 420)
+    draw_number(str(leaderboard[2]) if len(leaderboard) > 2 else 0,230, 330)
 
 def is_point_in_rect(px, py, rect: Box):
     """
