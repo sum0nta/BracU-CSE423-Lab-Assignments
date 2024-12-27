@@ -19,7 +19,6 @@ car_width, car_height = 50, 100
 oncoming_cars = []
 immunity_circles = []
 coins = []
-# lane_speed = 2.5
 score = 0
 start_time = time.time()
 game_over = True
@@ -30,7 +29,8 @@ paused = False
 # Game states
 game_state = 0  # 0: Main menu, 1: Difficulty menu, 2: Game
 immunity_active = False
-immunity_start_time = 0 
+immunity_start_time = 0
+leaderboard = [0,0,0]
 
 #--------rafi close----------#
 
@@ -129,6 +129,13 @@ def setPixel(x, y):
     glVertex2f(x, y)
     glEnd()
 
+def drawImmunityCoin():
+    global immunity_circles
+    for circle in immunity_circles:
+                    glBegin(GL_POINTS)
+                    glColor3f(0.0, 1.0, 0.0)  # Green color
+                    MidpointCircle(10, circle[0], circle[1])
+                    glEnd()
 # Draw Lane Lines
 def drawLanes():
     glColor3f(1.0, 1.0, 1.0)  # White color
@@ -165,12 +172,7 @@ def drawPlayerCar():
 
     midpointLineEightWay(player_x - car_width // 2+15, player_y+55, player_x - car_width // 2+15, player_y+25)
     midpointLineEightWay(player_x + car_width // 2-15, player_y+55, player_x + car_width // 2-15, player_y+25)
-    # glBegin(GL_POINTS)
-    # MidpointCircle(8, player_x - car_width // 2-8, player_y+15)
-    # MidpointCircle(8, player_x - car_width //2 + 58, player_y+15)
-    # MidpointCircle(8, player_x - car_width // 2-8, player_y+80)
-    # MidpointCircle(8, player_x - car_width //2 + 58, player_y+80)
-    # glEnd()
+
 
 
 
@@ -272,25 +274,30 @@ def update(value):
 
 # Spawn Oncoming Cars and Coins
 def spawnObjects(value):
+    global immunity_circles, game_over, paused
     if not game_over and paused == False:
         lane = random.choice(lanes) - 50
-        if random.random() < 0.5:  # 50% chance to spawn a coin
-            coins.append([lane, screenHeight + car_height + random.randint(50, 200)])
-        else:
+        probability = random.random()
+        if probability < 0.9:  
             oncoming_cars.append([lane, screenHeight])
-        glutTimerFunc(1000, spawnObjects, 0)
+        elif probability < 0.8:
+            coins.append([lane, screenHeight + car_height + random.randint(50, 200)])
+        else:               
+            circle_data = [lane, screenHeight, True, 5]
+            immunity_circles.append(circle_data)
+        glutTimerFunc(900, spawnObjects, 0)
 
 # Keyboard Controls
 def keyboardListener(key, x, y):
     global player_x,player_y, paused
 
-    if key == b'a' and player_x >= lanes[0]:  # Move left
+    if key == b'a' and player_x > lanes[0]:  # Move left
         player_x -= 100
     elif key == b'd' and player_x + 100 <= lanes[-1]:  # Move right
         player_x += 100
-    elif key == b'w' and player_y <= screenHeight - car_height:  # Move up
+    elif key == b'w' and player_y < screenHeight - car_height:  # Move up
         player_y += 20
-    elif key == b's' and player_y >= 0:  # Move down
+    elif key == b's' and player_y > 0:  # Move down
         player_y -= 20
     elif key == b'\x1b':  # Escape key
         paused = not paused
@@ -555,6 +562,126 @@ def draw_word(word, start_x, start_y, spacing=15):
             letters[char.upper()].draw(x_offset, start_y)
             x_offset += spacing  # Add spacing between letters
 
+
+
+#-------------------Numbers--------------------------#
+
+class Number:
+    def __init__(self, segments):
+        self.segments = segments  # List of line segments representing the number
+
+    def draw(self, start_x, start_y):
+        # Loop through each segment and draw it, adjusting the position for each number
+        for (x1, y1, x2, y2) in self.segments:
+            # Assuming you have a drawing function (e.g., draw_line)
+            midpointLineEightWay(start_x + x1, start_y + y1, start_x + x2, start_y + y2)
+
+
+def create_digit_0():
+    return Number([
+        (0, 0, 0, 20),  # Left vertical
+        (0, 20, 10, 20),  # Top horizontal
+        (10, 20, 10, 0),  # Right vertical
+        (10, 0, 0, 0)  # Bottom horizontal
+    ])
+
+def create_digit_1():
+    return Number([
+        (5, 0, 5, 20),  # Vertical line
+    ])
+
+def create_digit_2():
+    return Number([
+        (10, 20, 0, 20),  # Top horizontal line
+        (0, 20, 0, 10),   # Left vertical (top half)
+        (0, 10, 10, 10),  # Middle horizontal line
+        (10, 10, 10, 0),  # Right vertical (bottom half)
+        (10, 0, 0, 0)     # Bottom horizontal line
+    ])
+
+def create_digit_3():
+    return Number([
+        (0, 0, 10, 0),  # Top horizontal line
+        (10, 0, 10, 10),  # Right vertical line (top half)
+        (0, 10, 10, 10),  # Middle horizontal line
+        (0, 10, 0, 0),  # Left vertical line (bottom half)
+        (10, 0, 10, 10)  # Right vertical line (bottom half)
+    ])
+
+def create_digit_4():
+    return Number([
+        (0, 0, 0, 20),  # Left vertical line
+        (0, 10, 10, 10),  # Horizontal line in the middle
+        (10, 10, 10, 0)  # Right vertical line
+    ])
+
+def create_digit_5():
+    return Number([
+        (10, 20, 0, 20),  # Top horizontal line
+        (0, 20, 0, 10),   # Left vertical (top half)
+        (0, 10, 10, 10),  # Middle horizontal line
+        (10, 10, 10, 0),  # Right vertical (bottom half)
+        (10, 0, 0, 0)     # Bottom horizontal line
+    ])
+
+def create_digit_6():
+    return Number([
+        (10, 20, 0, 20),  # Top horizontal line
+        (0, 20, 0, 0),  # Left vertical line
+        (0, 0, 10, 0),  # Bottom horizontal line
+        (10, 0, 10, 10),  # Right vertical line
+        (10, 10, 5, 10)  # Inner horizontal line
+    ])
+
+def create_digit_7():
+    return Number([
+        (0, 0, 10, 0),  # Top horizontal line
+        (10, 0, 10, 20)  # Right vertical line
+    ])
+
+def create_digit_8():
+    return Number([
+        (10, 20, 0, 20),  # Top horizontal line
+        (0, 20, 0, 0),  # Left vertical line
+        (0, 0, 10, 0),  # Bottom horizontal line
+        (10, 0, 10, 10),  # Right vertical line
+        (10, 10, 0, 10)  # Middle horizontal line
+    ])
+
+def create_digit_9():
+    return Number([
+        (0, 0, 0, 20),  # Left vertical
+        (0, 20, 10, 20),  # Top horizontal
+        (10, 20, 10, 0),  # Right vertical
+        (10, 0, 0, 0),  # Bottom horizontal
+        (5, 10, 10, 0)  # Tail of 9
+    ])
+
+def create_digit_space():
+    return Number([])  # No lines for a space
+
+# Function to draw a number with a given starting position
+def draw_number(number, start_x, start_y, spacing=15):
+    digits = {
+        "0": create_digit_0(),
+        "1": create_digit_1(),
+        "2": create_digit_2(),
+        "3": create_digit_3(),
+        "4": create_digit_4(),
+        "5": create_digit_5(),
+        "6": create_digit_6(),
+        "7": create_digit_7(),
+        "8": create_digit_8(),
+        "9": create_digit_9(),
+        " ": create_digit_space()  # Space character
+    }
+    
+    x_offset = start_x
+    for digit in str(number):
+        number_obj = digits[digit]
+        number_obj.draw(x_offset, start_y)  # Assuming `draw` method exists for Number class
+        x_offset += spacing  # Adjust the horizontal position for the next digit
+
 #---------BOX CREATION--------------#
 play_box = Box(180, 490, 150, 60)
 leaderboard_box = Box(140, 400, 230, 60)
@@ -567,6 +694,11 @@ restart_box = Box(60, 270, 150, 60)
 mainmenu_box = Box(300, 270, 150, 60)
 resume_box = Box(180, 400, 150, 60)
 exit_box2 = Box(60, 270, 150, 60)
+
+player_score1=Box(140, 490, 230, 60)
+player_score2=Box(140, 400, 230, 60)
+player_score3=Box(140, 310, 230, 60)
+mainmenu_box2 = Box(178, 220, 150, 60)
 
 def drawMainMenu():
     glColor3f(1.0, 0.0, 0.0) 
@@ -615,6 +747,18 @@ def drawPaused():
     glColor3f(1.0, 0.0, 0.0) 
     exit_box2.draw()
     draw_word("EXIT", 110, 290)
+
+def drawLeaderboard():
+    glColor3f(0.0, 0.2, 0.6)
+    player_score1.draw()
+    player_score2.draw()
+    player_score3.draw()
+    glColor3f(0.0, 0.7, 0.6)
+    mainmenu_box2.draw()
+    draw_word("MAINMENU", 195, 240)
+    draw_number(str(leaderboard[0]),230, 510)
+    draw_number(str(leaderboard[1]),230, 420)
+    draw_number(str(leaderboard[2]),230, 330)
 
 def is_point_in_rect(px, py, rect: Box):
     """
@@ -669,7 +813,7 @@ def mouse_click(button, state, x, y):
             if is_point_in_rect(x, adjusted_y, play_box):
                 game_state = 1
             elif is_point_in_rect(x, adjusted_y, leaderboard_box):
-                pass  # Add leaderboard functionality here
+                game_state =3  # Add leaderboard functionality here
             elif is_point_in_rect(x, adjusted_y, exit_box):
                 glutLeaveMainLoop()
         elif game_state == 1:  # Difficulty selection screen
@@ -702,11 +846,14 @@ def mouse_click(button, state, x, y):
                 game_state = 0  # Return to main menu
             elif is_point_in_rect(x, adjusted_y, exit_box2):
                 glutLeaveMainLoop()
+        elif game_state == 3:
+            if is_point_in_rect(x, adjusted_y, mainmenu_box2):
+                game_state = 0
     glutPostRedisplay()
 
 
 def check_collisions():
-    global player_x, player_y, car_width, car_height, oncoming_cars, coins, immunity_circles, score, game_over, immunity_active,immunity_start_time
+    global player_x, player_y, car_width, car_height, oncoming_cars, coins, immunity_circles, score, game_over, immunity_active,immunity_start_time,leaderboard
 
     # Player car bounding box
     player_left = player_x - car_width // 2
@@ -733,6 +880,9 @@ def check_collisions():
                 print("Collision avoided due to immunity!")
             else:
                 print("Collision detected with an oncoming car!")
+                leaderboard.append(score)
+                leaderboard = sorted(leaderboard, reverse=True)[:3]
+                print(leaderboard)
                 game_over = True
                 return
 
@@ -848,16 +998,20 @@ def display():
             drawImmunityEffect() # Draw immunity effect
             drawOncomingCars()
             drawCoins()
-            generateImmunityCoins(0)    
-            for circle in immunity_circles:
-                    glBegin(GL_POINTS)
-                    glColor3f(0.0, 1.0, 0.0)  # Green color
-                    MidpointCircle(random.randint(5,15), circle[0], circle[1])
-                    glEnd()
+            # generateImmunityCoins(0)
+            drawImmunityCoin()    
+            # for circle in immunity_circles:
+            #         glBegin(GL_POINTS)
+            #         glColor3f(0.0, 1.0, 0.0)  # Green color
+            #         MidpointCircle(10, circle[0], circle[1])
+            #         glEnd()
             displayScoreAndTime()
         else:
             glClear(GL_COLOR_BUFFER_BIT)
             drawPaused()
+    elif game_state == 3:
+        glClear(GL_COLOR_BUFFER_BIT)
+        drawLeaderboard()
     elif game_over:
         glClear(GL_COLOR_BUFFER_BIT)
         drawGameover()
