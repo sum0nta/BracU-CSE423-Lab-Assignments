@@ -12,7 +12,7 @@ screenWidth = 500
 screenHeight = 800
 
 # Game variables
-lanes = [100, 200, 300, 400]  # Lane x-positions
+lanes = [100, 200, 300, 400, 500]  # Lane x-positions
 player_x = lanes[1] - 50  # Player car starts in the second lane
 player_y = 100  # Player car's initial y-position
 car_width, car_height = 50, 100
@@ -274,22 +274,23 @@ def update(value):
 def spawnObjects(value):
     if not game_over and paused == False:
         lane = random.choice(lanes) - 50
-        oncoming_cars.append([lane, screenHeight])
         if random.random() < 0.5:  # 50% chance to spawn a coin
             coins.append([lane, screenHeight + car_height + random.randint(50, 200)])
+        else:
+            oncoming_cars.append([lane, screenHeight])
         glutTimerFunc(1000, spawnObjects, 0)
 
 # Keyboard Controls
 def keyboardListener(key, x, y):
     global player_x,player_y, paused
 
-    if key == b'a' and player_x > lanes[0]:  # Move left
+    if key == b'a' and player_x >= lanes[0]:  # Move left
         player_x -= 100
-    elif key == b'd' and player_x < lanes[-1]:  # Move right
+    elif key == b'd' and player_x + 100 <= lanes[-1]:  # Move right
         player_x += 100
-    elif key == b'w' and player_y < screenHeight - car_height:  # Move up
+    elif key == b'w' and player_y <= screenHeight - car_height:  # Move up
         player_y += 20
-    elif key == b's' and player_y > 0:  # Move down
+    elif key == b's' and player_y >= 0:  # Move down
         player_y -= 20
     elif key == b'\x1b':  # Escape key
         paused = not paused
