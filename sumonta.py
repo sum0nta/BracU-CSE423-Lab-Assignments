@@ -30,7 +30,9 @@ paused = False
 game_state = 0  # 0: Main menu, 1: Difficulty menu, 2: Game
 immunity_active = False
 immunity_start_time = 0
-leaderboard = [0,0,0]
+file = open("leaderboard.txt", "r")
+leaderboard = file.readlines()
+leaderboard = [int(score) for score in leaderboard]
 
 #--------rafi close----------#
 
