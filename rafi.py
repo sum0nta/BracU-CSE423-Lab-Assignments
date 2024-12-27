@@ -813,19 +813,15 @@ def init():
     glClearColor(0.0, 0.0, 0.0, 1.0)
     gluOrtho2D(0, screenWidth, 0, screenHeight)
 
-# Main Function
-def main():
-    glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB)
-    glutInitWindowSize(screenWidth, screenHeight)
-    glutCreateWindow(b"DHAKA NITRO")
-    init()
-    glutDisplayFunc(display)
-    glutKeyboardFunc(keyboardListener)
-    glutMouseFunc(mouse_click)
-    glutTimerFunc(0, update, 0)
-    glutTimerFunc(1000, spawnObjects, 0)
-    glutMainLoop()
 
-if __name__ == "__main__":
-    main()
+glutInit()
+glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB)
+glutInitWindowSize(screenWidth, screenHeight)
+glutCreateWindow(b"DHAKA NITRO")
+init()
+glutDisplayFunc(display)
+glutKeyboardFunc(keyboardListener)
+glutMouseFunc(mouse_click)
+glutTimerFunc(0, update, 0)
+glutTimerFunc(1000, spawnObjects, 0)
+glutMainLoop()
