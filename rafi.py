@@ -12,14 +12,13 @@ screenWidth = 500
 screenHeight = 800
 
 # Game variables
-lanes = [100, 200, 300, 400]  # Lane x-positions
+lanes = [100, 200, 300, 400, 500]  # Lane x-positions
 player_x = lanes[1] - 50  # Player car starts in the second lane
 player_y = 100  # Player car's initial y-position
 car_width, car_height = 50, 100
 oncoming_cars = []
 immunity_circles = []
 coins = []
-# lane_speed = 2.5
 score = 0
 start_time = time.time()
 game_over = True
@@ -31,8 +30,9 @@ paused = False
 game_state = 0  # 0: Main menu, 1: Difficulty menu, 2: Game
 immunity_active = False
 immunity_start_time = 0
-leaderboard = [0,0,0]
-
+file = open("leaderboard.txt", "r")
+leaderboard = file.readlines()
+leaderboard = [int(score) for score in leaderboard]
 #--------rafi close----------#
 
 
@@ -130,6 +130,13 @@ def setPixel(x, y):
     glVertex2f(x, y)
     glEnd()
 
+def drawImmunityCoin():
+    global immunity_circles
+    for circle in immunity_circles:
+        glBegin(GL_POINTS)
+        glColor3f(0.0, 1.0, 0.0)  # Green color
+        MidpointCircle(10, circle[0], circle[1])
+        glEnd()
 # Draw Lane Lines
 def drawLanes():
     glColor3f(1.0, 1.0, 1.0)  # White color
@@ -166,12 +173,7 @@ def drawPlayerCar():
 
     midpointLineEightWay(player_x - car_width // 2+15, player_y+55, player_x - car_width // 2+15, player_y+25)
     midpointLineEightWay(player_x + car_width // 2-15, player_y+55, player_x + car_width // 2-15, player_y+25)
-    # glBegin(GL_POINTS)
-    # MidpointCircle(8, player_x - car_width // 2-8, player_y+15)
-    # MidpointCircle(8, player_x - car_width //2 + 58, player_y+15)
-    # MidpointCircle(8, player_x - car_width // 2-8, player_y+80)
-    # MidpointCircle(8, player_x - car_width //2 + 58, player_y+80)
-    # glEnd()
+
 
 
 
@@ -195,14 +197,7 @@ def drawCoins():
         MidpointCircle(10, coin[0], coin[1])
     glEnd()
 
-def generateImmunityCoins(value):
-    global immunity_circles, game_over, paused
-    if not game_over and paused == False:
-        is_unique = random.random() < 0.001 #10% odds
-        if is_unique and len(immunity_circles) < 1:            
-            circle_data = [random.choice(lanes)-50, screenHeight, True, 5]
-            immunity_circles.append(circle_data)
-    glutTimerFunc(5000, generateImmunityCoins, 0)
+
 # Midpoint Circle Algorithm
 
 
@@ -251,7 +246,7 @@ def update(value):
     elif paused:
         return
     if time.time() - start_time > 5:
-        lane_speed = lane_speed + 0.0001
+        lane_speed = lane_speed + 0.001
     # Move oncoming cars
     for car in oncoming_cars:
         car[1] -= lane_speed
@@ -273,12 +268,18 @@ def update(value):
 
 # Spawn Oncoming Cars and Coins
 def spawnObjects(value):
+    global immunity_circles, game_over, paused
     if not game_over and paused == False:
         lane = random.choice(lanes) - 50
-        oncoming_cars.append([lane, screenHeight])
-        if random.random() < 0.5:  # 50% chance to spawn a coin
-            coins.append([lane, screenHeight + car_height + random.randint(50, 200)])
-        glutTimerFunc(1000, spawnObjects, 0)
+        probability = random.random()
+        if probability < 0.7:  
+            oncoming_cars.append([lane, screenHeight])
+        elif probability > 0.95:
+            circle_data = [lane, screenHeight, True, 5]
+            immunity_circles.append(circle_data)
+        else:               
+            coins.append([lane, screenHeight])
+        glutTimerFunc(900, spawnObjects, 0)
 
 # Keyboard Controls
 def keyboardListener(key, x, y):
@@ -286,7 +287,7 @@ def keyboardListener(key, x, y):
 
     if key == b'a' and player_x > lanes[0]:  # Move left
         player_x -= 100
-    elif key == b'd' and player_x < lanes[-1]:  # Move right
+    elif key == b'd' and player_x + 100 <= lanes[-1]:  # Move right
         player_x += 100
     elif key == b'w' and player_y < screenHeight - car_height:  # Move up
         player_y += 20
@@ -296,7 +297,7 @@ def keyboardListener(key, x, y):
         paused = not paused
         glutTimerFunc(16, update, 0)
         glutTimerFunc(1000, spawnObjects, 0)
-        glutTimerFunc(5000, generateImmunityCoins, 0)
+       
 
     glutPostRedisplay()  # Redraw the screen to update
 
@@ -580,32 +581,31 @@ def create_digit_0():
 
 def create_digit_1():
     return Number([
-        (5, 0, 5, 20),  # Vertical line
+        (5, 0, 5, 20)  # Vertical line
     ])
 
 def create_digit_2():
     return Number([
-        (10, 20, 0, 20),  # Top horizontal line
-        (0, 20, 0, 10),   # Left vertical (top half)
-        (0, 10, 10, 10),  # Middle horizontal line
-        (10, 10, 10, 0),  # Right vertical (bottom half)
-        (10, 0, 0, 0)     # Bottom horizontal line
+        (0, 20, 10, 20),  # Top horizontal line
+        (10, 20, 10, 10),  # Right vertical (top half)
+        (10, 10, 0, 10),  # Middle horizontal line
+        (0, 10, 0, 0),    # Left vertical (bottom half)
+        (0, 0, 10, 0)     # Bottom horizontal line
     ])
 
 def create_digit_3():
     return Number([
-        (0, 0, 10, 0),  # Top horizontal line
-        (10, 0, 10, 10),  # Right vertical line (top half)
-        (0, 10, 10, 10),  # Middle horizontal line
-        (0, 10, 0, 0),  # Left vertical line (bottom half)
-        (10, 0, 10, 10)  # Right vertical line (bottom half)
+        (0, 20, 10, 20),  # Top horizontal line
+        (10, 20, 10, 0),  # Right vertical line
+        (10, 10, 0, 10),  # Middle horizontal line
+        (0, 0, 10, 0)     # Bottom horizontal line
     ])
 
 def create_digit_4():
     return Number([
-        (0, 0, 0, 20),  # Left vertical line
+        (0, 20, 0, 10),  # Left vertical line (top half)
         (0, 10, 10, 10),  # Horizontal line in the middle
-        (10, 10, 10, 0)  # Right vertical line
+        (10, 20, 10, 0)   # Right vertical line
     ])
 
 def create_digit_5():
@@ -620,38 +620,40 @@ def create_digit_5():
 def create_digit_6():
     return Number([
         (10, 20, 0, 20),  # Top horizontal line
-        (0, 20, 0, 0),  # Left vertical line
-        (0, 0, 10, 0),  # Bottom horizontal line
-        (10, 0, 10, 10),  # Right vertical line
-        (10, 10, 5, 10)  # Inner horizontal line
+        (0, 20, 0, 0),    # Left vertical line
+        (0, 0, 10, 0),    # Bottom horizontal line
+        (10, 0, 10, 10),  # Right vertical (bottom half)
+        (10, 10, 0, 10)   # Middle horizontal line
     ])
 
 def create_digit_7():
     return Number([
-        (0, 0, 10, 0),  # Top horizontal line
-        (10, 0, 10, 20)  # Right vertical line
+        (0, 20, 10, 20),  # Top horizontal line
+        (10, 20, 10, 0)   # Right vertical line
     ])
 
 def create_digit_8():
     return Number([
-        (10, 20, 0, 20),  # Top horizontal line
-        (0, 20, 0, 0),  # Left vertical line
-        (0, 0, 10, 0),  # Bottom horizontal line
-        (10, 0, 10, 10),  # Right vertical line
-        (10, 10, 0, 10)  # Middle horizontal line
+        (0, 20, 10, 20),  # Top horizontal line
+        (0, 20, 0, 0),    # Left vertical line
+        (0, 0, 10, 0),    # Bottom horizontal line
+        (10, 0, 10, 20),  # Right vertical line
+        (0, 10, 10, 10)   # Middle horizontal line
     ])
 
 def create_digit_9():
     return Number([
-        (0, 0, 0, 20),  # Left vertical
-        (0, 20, 10, 20),  # Top horizontal
-        (10, 20, 10, 0),  # Right vertical
-        (10, 0, 0, 0),  # Bottom horizontal
-        (5, 10, 10, 0)  # Tail of 9
+        (10, 20, 0, 20),  # Top horizontal line
+        (0, 20, 0, 10),   # Left vertical (top half)
+        (0, 10, 10, 10),  # Middle horizontal line
+        (10, 20, 10, 10), # Top right vertical line
+        (10, 10, 10, 0),  # Bottom right vertical line
+        (10, 0, 0, 0)     # Bottom horizontal line
     ])
 
 def create_digit_space():
     return Number([])  # No lines for a space
+
 
 # Function to draw a number with a given starting position
 def draw_number(number, start_x, start_y, spacing=15):
@@ -749,7 +751,7 @@ def drawLeaderboard():
     glColor3f(0.0, 0.7, 0.6)
     mainmenu_box2.draw()
     draw_word("MAINMENU", 195, 240)
-    draw_number(str(leaderboard[0]),230, 510)
+    draw_number(str(leaderboard[1]),230, 510)
     draw_number(str(leaderboard[1]),230, 420)
     draw_number(str(leaderboard[2]),230, 330)
 
@@ -784,7 +786,6 @@ def restartGame():
     # Restart timers
     glutTimerFunc(16, update, 0)
     glutTimerFunc(1000, spawnObjects, 0)
-    glutTimerFunc(5000, generateImmunityCoins, 0)
 
     # Redraw the screen
     glutPostRedisplay()
@@ -834,7 +835,7 @@ def mouse_click(button, state, x, y):
                 paused = False
                 glutTimerFunc(16, update, 0)
                 glutTimerFunc(1000, spawnObjects, 0)
-                glutTimerFunc(5000, generateImmunityCoins, 0)
+
             elif is_point_in_rect(x, adjusted_y, mainmenu_box):
                 game_state = 0  # Return to main menu
             elif is_point_in_rect(x, adjusted_y, exit_box2):
@@ -991,12 +992,7 @@ def display():
             drawImmunityEffect() # Draw immunity effect
             drawOncomingCars()
             drawCoins()
-            generateImmunityCoins(0)    
-            for circle in immunity_circles:
-                    glBegin(GL_POINTS)
-                    glColor3f(0.0, 1.0, 0.0)  # Green color
-                    MidpointCircle(10, circle[0], circle[1])
-                    glEnd()
+            drawImmunityCoin()    
             displayScoreAndTime()
         else:
             glClear(GL_COLOR_BUFFER_BIT)
