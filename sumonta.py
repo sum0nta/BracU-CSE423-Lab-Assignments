@@ -134,10 +134,10 @@ def setPixel(x, y):
 def drawImmunityCoin():
     global immunity_circles
     for circle in immunity_circles:
-                    glBegin(GL_POINTS)
-                    glColor3f(0.0, 1.0, 0.0)  # Green color
-                    MidpointCircle(10, circle[0], circle[1])
-                    glEnd()
+        glBegin(GL_POINTS)
+        glColor3f(0.0, 1.0, 0.0)  # Green color
+        MidpointCircle(10, circle[0], circle[1])
+        glEnd()
 # Draw Lane Lines
 def drawLanes():
     glColor3f(1.0, 1.0, 1.0)  # White color
@@ -198,14 +198,7 @@ def drawCoins():
         MidpointCircle(10, coin[0], coin[1])
     glEnd()
 
-def generateImmunityCoins(value):
-    global immunity_circles, game_over, paused
-    if not game_over and paused == False:
-        is_unique = random.random() < 0.001 #10% odds
-        if is_unique and len(immunity_circles) < 1:            
-            circle_data = [random.choice(lanes)-50, screenHeight, True, 5]
-            immunity_circles.append(circle_data)
-    glutTimerFunc(5000, generateImmunityCoins, 0)
+
 # Midpoint Circle Algorithm
 
 
@@ -254,7 +247,7 @@ def update(value):
     elif paused:
         return
     if time.time() - start_time > 5:
-        lane_speed = lane_speed + 0.0001
+        lane_speed = lane_speed + 0.001
     # Move oncoming cars
     for car in oncoming_cars:
         car[1] -= lane_speed
@@ -280,13 +273,13 @@ def spawnObjects(value):
     if not game_over and paused == False:
         lane = random.choice(lanes) - 50
         probability = random.random()
-        if probability < 0.9:  
+        if probability < 0.7:  
             oncoming_cars.append([lane, screenHeight])
-        elif probability < 0.8:
-            coins.append([lane, screenHeight + car_height + random.randint(50, 200)])
-        else:               
+        elif probability > 0.95:
             circle_data = [lane, screenHeight, True, 5]
             immunity_circles.append(circle_data)
+        else:               
+            coins.append([lane, screenHeight])
         glutTimerFunc(900, spawnObjects, 0)
 
 # Keyboard Controls
@@ -305,7 +298,7 @@ def keyboardListener(key, x, y):
         paused = not paused
         glutTimerFunc(16, update, 0)
         glutTimerFunc(1000, spawnObjects, 0)
-        glutTimerFunc(5000, generateImmunityCoins, 0)
+       
 
     glutPostRedisplay()  # Redraw the screen to update
 
@@ -793,7 +786,6 @@ def restartGame():
     # Restart timers
     glutTimerFunc(16, update, 0)
     glutTimerFunc(1000, spawnObjects, 0)
-    glutTimerFunc(5000, generateImmunityCoins, 0)
 
     # Redraw the screen
     glutPostRedisplay()
@@ -843,7 +835,7 @@ def mouse_click(button, state, x, y):
                 paused = False
                 glutTimerFunc(16, update, 0)
                 glutTimerFunc(1000, spawnObjects, 0)
-                glutTimerFunc(5000, generateImmunityCoins, 0)
+
             elif is_point_in_rect(x, adjusted_y, mainmenu_box):
                 game_state = 0  # Return to main menu
             elif is_point_in_rect(x, adjusted_y, exit_box2):
@@ -1000,13 +992,7 @@ def display():
             drawImmunityEffect() # Draw immunity effect
             drawOncomingCars()
             drawCoins()
-            # generateImmunityCoins(0)
             drawImmunityCoin()    
-            # for circle in immunity_circles:
-            #         glBegin(GL_POINTS)
-            #         glColor3f(0.0, 1.0, 0.0)  # Green color
-            #         MidpointCircle(10, circle[0], circle[1])
-            #         glEnd()
             displayScoreAndTime()
         else:
             glClear(GL_COLOR_BUFFER_BIT)
