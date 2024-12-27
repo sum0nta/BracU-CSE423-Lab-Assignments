@@ -751,7 +751,7 @@ def drawLeaderboard():
     glColor3f(0.0, 0.7, 0.6)
     mainmenu_box2.draw()
     draw_word("MAINMENU", 195, 240)
-    draw_number(str(leaderboard[1]),230, 510)
+    draw_number(str(leaderboard[0]),230, 510)
     draw_number(str(leaderboard[1]),230, 420)
     draw_number(str(leaderboard[2]),230, 330)
 
