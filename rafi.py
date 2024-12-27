@@ -3,10 +3,7 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import random
 import time
-'''Implement car movement (up, down, left, right) and lane switching
-Spawn oncoming cars and coins on the lanes. Magnet, Immunity
-Display score and elapsed time during gameplay.
-'''
+
 # Window dimensions
 screenWidth = 500
 screenHeight = 800
@@ -19,20 +16,32 @@ car_width, car_height = 50, 100
 oncoming_cars = []
 immunity_circles = []
 coins = []
+special_coins = []
+magnet = []
 score = 0
 start_time = time.time()
 game_over = True
 paused = False
+
+#-------Nodi variables--------------#
+
+# Initialize leaderboard
+try:
+    with open("leaderboard.txt", "r") as file:
+        leaderboard = [int(score.strip()) for score in file.readlines()]
+except FileNotFoundError:
+    leaderboard = [0, 0, 0]  # Default leaderboard if file is missing
+
 
 
 #--------rafi variables added----------#
 # Game states
 game_state = 0  # 0: Main menu, 1: Difficulty menu, 2: Game
 immunity_active = False
+magnet_active = False
 immunity_start_time = 0
-file = open("leaderboard.txt", "r")
-leaderboard = file.readlines()
-leaderboard = [int(score) for score in leaderboard]
+magnet_start_time = 0
+
 #--------rafi close----------#
 
 
@@ -197,6 +206,21 @@ def drawCoins():
         MidpointCircle(10, coin[0], coin[1])
     glEnd()
 
+def drawDoubleCoins():
+    glBegin(GL_POINTS)
+    glColor3f(1.0, 0.5, 1.0)
+    for coin in special_coins:
+        MidpointCircle(10, coin[0], coin[1])
+    glEnd()
+
+def drawMagnet():
+    global magnet
+    for circle in magnet:
+        glBegin(GL_POINTS)
+        glColor3f(0.21, 0.0, 0.74)  # Green color
+        MidpointCircle(10, circle[0], circle[1])
+        glEnd()
+
 
 # Midpoint Circle Algorithm
 
@@ -239,7 +263,7 @@ def displayScoreAndTime():
 
 # Update Game State
 def update(value):
-    global player_x, player_y, oncoming_cars, coins, score, game_over, paused, lane_speed
+    global player_x, player_y, oncoming_cars, coins, score, game_over, paused, lane_speed, magnet
 
     if game_over:
         return
@@ -259,6 +283,10 @@ def update(value):
 
     for circle in immunity_circles:
         circle[1] -= lane_speed
+    for circle in magnet:
+        circle[1] -= lane_speed
+    for circle in special_coins:
+        circle[1] -= lane_speed
 
     # Check collisions
     check_collisions()        
@@ -268,7 +296,7 @@ def update(value):
 
 # Spawn Oncoming Cars and Coins
 def spawnObjects(value):
-    global immunity_circles, game_over, paused
+    global immunity_circles, game_over, paused, magnet_active, magnet, special_coins, coins, oncoming_cars
     if not game_over and paused == False:
         lane = random.choice(lanes) - 50
         probability = random.random()
@@ -277,9 +305,18 @@ def spawnObjects(value):
         elif probability > 0.95:
             circle_data = [lane, screenHeight, True, 5]
             immunity_circles.append(circle_data)
-        else:               
-            coins.append([lane, screenHeight])
-        glutTimerFunc(900, spawnObjects, 0)
+        elif probability > 0.9:
+            magnet.append([lane, screenHeight])
+        else: 
+            if random.random() > 0.8:  
+                special_coins.append([lane, screenHeight])
+                print(f"Special coin spawned at lane {lane}")
+            else:
+                coins.append([lane, screenHeight])
+                print(f"Regular coin spawned at lane {lane}")
+                          
+        
+        glutTimerFunc(700, spawnObjects, 0)
 
 # Keyboard Controls
 def keyboardListener(key, x, y):
@@ -654,7 +691,6 @@ def create_digit_9():
 def create_digit_space():
     return Number([])  # No lines for a space
 
-
 # Function to draw a number with a given starting position
 def draw_number(number, start_x, start_y, spacing=15):
     digits = {
@@ -744,6 +780,7 @@ def drawPaused():
     draw_word("EXIT", 110, 290)
 
 def drawLeaderboard():
+    global leaderboard  # Declare leaderboard as global
     glColor3f(0.0, 0.2, 0.6)
     player_score1.draw()
     player_score2.draw()
@@ -751,9 +788,9 @@ def drawLeaderboard():
     glColor3f(0.0, 0.7, 0.6)
     mainmenu_box2.draw()
     draw_word("MAINMENU", 195, 240)
-    draw_number(str(leaderboard[0]),230, 510)
-    draw_number(str(leaderboard[1]),230, 420)
-    draw_number(str(leaderboard[2]),230, 330)
+    draw_number(str(leaderboard[0]) if len(leaderboard) > 0 else 0,230, 510)
+    draw_number(str(leaderboard[1]) if len(leaderboard) > 1 else 0,230, 420)
+    draw_number(str(leaderboard[2]) if len(leaderboard) > 2 else 0,230, 330)
 
 def is_point_in_rect(px, py, rect: Box):
     """
@@ -844,10 +881,25 @@ def mouse_click(button, state, x, y):
             if is_point_in_rect(x, adjusted_y, mainmenu_box2):
                 game_state = 0
     glutPostRedisplay()
+#-----------handling Leaderboard------------------------#
+# Save leaderboard to a file
+def saveLeaderboard():
+    with open("leaderboard.txt", "w") as file:
+        for score in leaderboard:
+            file.write(f"{score}\n")
+
+# Update the leaderboard when the game ends
+def updateLeaderboard():
+    global score, leaderboard
+    leaderboard.append(score)
+    leaderboard = sorted(leaderboard, reverse=True)[:3]
+    saveLeaderboard()
+    print("Leaderboard updated:", leaderboard)
+#---------------------leaderboard end-------------------#    
 
 
 def check_collisions():
-    global player_x, player_y, car_width, car_height, oncoming_cars, coins, immunity_circles, score, game_over, immunity_active,immunity_start_time,leaderboard
+    global player_x, player_y, car_width, car_height, oncoming_cars, coins, immunity_circles, score, game_over, immunity_active,immunity_start_time,leaderboard, magnet_active, magnet_start_time, special_coins
 
     # Player car bounding box
     player_left = player_x - car_width // 2
@@ -874,13 +926,11 @@ def check_collisions():
                 print("Collision avoided due to immunity!")
             else:
                 print("Collision detected with an oncoming car!")
-                leaderboard.append(score)
-                leaderboard = sorted(leaderboard, reverse=True)[:3]
-                print(leaderboard)
+                updateLeaderboard() 
                 game_over = True
                 return
 
-    # Check collision with coins
+    # Check collision with regular coins
     coin_radius = 10  # Radius of the coin
     for coin in coins[:]:  # Iterate over a copy since we might remove coins
         coin_x, coin_y = coin[0], coin[1]
@@ -896,10 +946,27 @@ def check_collisions():
             player_top > coin_bottom and
             player_bottom < coin_top
         ):
-            print("Coin collected!")
+            print(" Regular Coin collected!")
             score += 10
             coins.remove(coin)  # Remove collected coin
+    
+     # Check collision with special coins
+    for coin in special_coins[:]:
+        coin_x, coin_y = coin
+        coin_left = coin_x - coin_radius
+        coin_right = coin_x + coin_radius
+        coin_top = coin_y + coin_radius
+        coin_bottom = coin_y - coin_radius
 
+        if (
+            player_right > coin_left and
+            player_left < coin_right and
+            player_top > coin_bottom and
+            player_bottom < coin_top
+        ):
+            print("Special coin collected! Double points awarded!")
+            score += 20  # Double points
+            special_coins.remove(coin)
     # Check collision with immunity circles
     immunity_radius = 10  
     for circle in immunity_circles[:]:
@@ -923,6 +990,36 @@ def check_collisions():
     if immunity_active and (time.time() - immunity_start_time) > 10:
         print("Immunity has expired!")
         immunity_active = False  # Deactivate immunity
+    magnet_radius = 10  
+    for circle in magnet[:]:
+        circle_x, circle_y = circle
+        circle_left = circle_x - magnet_radius
+        circle_right = circle_x + magnet_radius
+        circle_top = circle_y + magnet_radius
+        circle_bottom = circle_y - magnet_radius
+
+        # Check for overlap
+        if (
+            player_right > circle_left and
+            player_left < circle_right and
+            player_top > circle_bottom and
+            player_bottom < circle_top
+        ):
+            magnet_active = True
+            magnet_start_time = time.time()
+            magnet.remove(circle)  # Remove collected immunity circle
+    if magnet_active and (time.time() - magnet_start_time) > 5:
+        print("Magnet has expired!")
+        magnet_active = False  # Deactivate immunity
+    elif magnet_active:
+        for coin in coins[:]:
+            if coin[1] < player_top:
+                coins.remove(coin)
+                score += 10
+        for coin in special_coins[:]:
+            if coin[1] < player_top:
+                special_coins.remove(coin)
+                score += 20
 
 
 
@@ -992,7 +1089,9 @@ def display():
             drawImmunityEffect() # Draw immunity effect
             drawOncomingCars()
             drawCoins()
-            drawImmunityCoin()    
+            drawImmunityCoin()
+            drawMagnet()
+            drawDoubleCoins()    
             displayScoreAndTime()
         else:
             glClear(GL_COLOR_BUFFER_BIT)
