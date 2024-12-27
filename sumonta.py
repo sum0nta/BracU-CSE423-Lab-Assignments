@@ -206,6 +206,13 @@ def drawCoins():
         MidpointCircle(10, coin[0], coin[1])
     glEnd()
 
+def drawDoubleCoins():
+    glBegin(GL_POINTS)
+    glColor3f(1.0, 0.5, 1.0)
+    for coin in special_coins:
+        MidpointCircle(10, coin[0], coin[1])
+    glEnd()
+
 def drawMagnet():
     global magnet
     for circle in magnet:
@@ -278,6 +285,8 @@ def update(value):
         circle[1] -= lane_speed
     for circle in magnet:
         circle[1] -= lane_speed
+    for circle in special_coins:
+        circle[1] -= lane_speed
 
     # Check collisions
     check_collisions()        
@@ -299,7 +308,7 @@ def spawnObjects(value):
         elif probability > 0.9:
             magnet.append([lane, screenHeight])
         else: 
-            if random.random() > 0.5:  # 50% chance for special coin
+            if random.random() > 0.8:  
                 special_coins.append([lane, screenHeight])
                 print(f"Special coin spawned at lane {lane}")
             else:
@@ -1007,6 +1016,10 @@ def check_collisions():
             if coin[1] < player_top:
                 coins.remove(coin)
                 score += 10
+        for coin in special_coins[:]:
+            if coin[1] < player_top:
+                special_coins.remove(coin)
+                score += 20
 
 
 
@@ -1077,7 +1090,8 @@ def display():
             drawOncomingCars()
             drawCoins()
             drawImmunityCoin()
-            drawMagnet()    
+            drawMagnet()
+            drawDoubleCoins()    
             displayScoreAndTime()
         else:
             glClear(GL_COLOR_BUFFER_BIT)
